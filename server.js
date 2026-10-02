@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const path = require('path');
 const connectDB = require('./src/config/db');
 const errorHandler = require('./src/middleware/errorHandler');
 
@@ -14,6 +15,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Rendre le dossier d'uploads public pour l'accès aux photos de profil
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
@@ -71,5 +75,6 @@ app.listen(PORT, () => {
   console.log(`👥 Demandes : http://localhost:${PORT}/api/requests`);
   console.log(`💳 Crédits : http://localhost:${PORT}/api/credits/packs`);
   console.log(`🔑 Auth : http://localhost:${PORT}/api/auth/login`);
+  console.log(`📷 Uploads: http://localhost:${PORT}/uploads/avatars/`);
   console.log(`==================================================\n`);
 });

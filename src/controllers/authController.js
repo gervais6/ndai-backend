@@ -1,6 +1,8 @@
 const User = require('../models/User');
 const Property = require('../models/Property');
 const jwt = require('jsonwebtoken');
+const path = require('path');
+const fs = require('fs');
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET || 'ndai_secret_fallback', {
@@ -165,6 +167,24 @@ exports.login = async (req, res, next) => {
   }
 };
 
+// @desc Déconnexion d'un utilisateur
+// @route POST /api/auth/logout
+exports.logout = async (req, res, next) => {
+  try {
+    if (req.user) {
+      // Nettoyer les tokens de notifications liés à cet appareil
+      await User.findByIdAndUpdate(req.user.id, { pushToken: '' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Déconnexion réussie. Vos sessions locales ont été clôturées.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc Obtenir le profil de l'utilisateur connecté
 // @route GET /api/auth/me
 exports.getMe = async (req, res, next) => {
@@ -220,6 +240,67 @@ exports.updateProfile = async (req, res, next) => {
     res.json({
       success: true,
       message: 'Profil mis à jour avec succès',
+      user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc Uploader une nouvelle photo de profil (Fichier image)
+// @route POST /api/auth/avatar
+exports.uploadProfilePicture = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'Veuillez sélectionner un fichier image valide (JPG, PNG ou WEBP)',
+      });
+    }
+
+    // Construction de l'URL absolue de l'avatar
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const avatarUrl = `${baseUrl}/uploads/avatars/${req.file.filename}`;
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { avatar: avatarUrl },
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      message: 'Photo de profil mise à jour avec succès',
+      avatar: user.avatar,
+      user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc Mettre à jour la photo de profil via URL ou base64
+// @route PUT /api/auth/avatar
+exports.updateAvatarUrl = async (req, res, next) => {
+  try {
+    const { avatar } = req.body;
+    if (!avatar || typeof avatar !== 'string' || !avatar.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Veuillez fournir l'URL ou les données de l'image",
+      });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { avatar: avatar.trim() },
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      message: 'Photo de profil mise à jour avec succès',
+      avatar: user.avatar,
       user,
     });
   } catch (error) {

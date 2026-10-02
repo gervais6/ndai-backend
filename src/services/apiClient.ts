@@ -66,6 +66,42 @@ export const ndaiApi = {
     return res.json();
   },
 
+  // Déconnexion
+  logout: async () => {
+    try {
+      await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: 'POST',
+        headers: getHeaders(),
+      });
+    } finally {
+      setAuthToken(null);
+    }
+  },
+
+  // Uploader une photo de profil (Fichier Image Multipart)
+  uploadAvatar: async (formData: FormData) => {
+    const headers: Record<string, string> = {};
+    if (userToken) {
+      headers['Authorization'] = `Bearer ${userToken}`;
+    }
+    const res = await fetch(`${API_BASE_URL}/auth/avatar`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+    return res.json();
+  },
+
+  // Mettre à jour l'avatar via URL ou base64
+  updateAvatarUrl: async (avatarUrl: string) => {
+    const res = await fetch(`${API_BASE_URL}/auth/avatar`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ avatar: avatarUrl }),
+    });
+    return res.json();
+  },
+
   switchRole: async (role: 'proprietaire' | 'locataire' | 'courtier') => {
     const res = await fetch(`${API_BASE_URL}/auth/switch-role`, {
       method: 'PUT',
